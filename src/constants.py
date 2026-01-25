@@ -1,0 +1,10 @@
+LOCAL_ADDRESS = "0.0.0.0"
+LOCAL_PORT = 53
+UPSTREAM_ADDRESS = "0.0.0.0"
+UPSTREAM_PORT = 53
+DEFAULT_TIMEOUT = 5  # seconds
+
+DEFAULT_LOGGING_FMT = "request,reply,truncated,error"
+DEFAULT_LOGGING_PREFIX = False
+DEFAULT_SETTINGS_FILE = "settings.toml"
+DEFAULT_LOGS_FILE = "dns_logs.log"

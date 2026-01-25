@@ -1,0 +1,24 @@
+[defaults]
+laddress = "0.0.0.0"
+lport = 53
+uaddress = "1.1.1.1"
+uport = 53
+timeout = 5
+log_format = "request,reply,truncated,error"
+# log_prefix = "undefined"
+logs_file = "dns_logs.log"
+
+[settings]
+laddress = "192.168.1.2"
+uaddress = "8.8.8.8"
+
+[vars]
+ip = "192.168.1.10"
+
+[map]
+personal.domain1 = "$ip"
+personal.domain2 = "192.168.42.86"
+www.personal.domain3 = "192.168.1.1"
+
+[exceptions]
+www.personal.domain3 = "192.168.42.86"
