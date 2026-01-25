@@ -1,9 +1,8 @@
 from configparser import ConfigParser
 
 from dnslib.server import DNSHandler, DNSServer
-from cli import argument_parser
+from cli.types_ import Args
 from constants import (
-    DEFAULT_LOGGING_FMT,
     DEFAULT_SETTINGS_FILE,
     DEFAULT_TIMEOUT,
     LOCAL_ADDRESS,
@@ -15,49 +14,18 @@ from dns import MainLogger, MainResolver
 from utils import get_mapping, get_section_without_defaults, parse_logs_file
 
 
-def main(
-    local_server_address=(LOCAL_ADDRESS, LOCAL_PORT),
-    dns_server_address=(UPSTREAM_ADDRESS, UPSTREAM_PORT),
-    timeout=DEFAULT_TIMEOUT,
-    log_format="",
-    log_prefix=False,
-    logs_file: str | bool = False,
-    map={},
-    exceptions={},
-):
-    resolver = MainResolver(
-        *dns_server_address, timeout=timeout, map=map, exceptions=exceptions
-    )
+def main() -> None:
+    args = Args.parse_args()
 
-    logger = MainLogger(log_format, log_prefix)
-
-    if logs_file:
-        logger.set_logs_file(logs_file)
-
-    server_ = DNSServer(
-        resolver, *local_server_address, logger=logger, handler=DNSHandler
-    )
-
-    try:
-        server_.start()
-
-    except KeyboardInterrupt:
-        print("Keyboard Interrupt detected. Closing...")
-        exit(0)
-
-
-if __name__ == "__main__":
-    args = argument_parser().parse_args()
-
-    defaults = {
-        "address": LOCAL_ADDRESS,
-        "port": LOCAL_PORT,
-        "upstream": f"{UPSTREAM_ADDRESS}:{UPSTREAM_PORT}",
-        "timeout": DEFAULT_TIMEOUT,
-        "log_format": DEFAULT_LOGGING_FMT,
-        "log_prefix": False,
-        "logs_file": False,
-    }
+    # defaults = {
+    #     "address": LOCAL_ADDRESS,
+    #     "port": LOCAL_PORT,
+    #     "upstream": f"{UPSTREAM_ADDRESS}:{UPSTREAM_PORT}",
+    #     "timeout": DEFAULT_TIMEOUT,
+    #     "log_format": DEFAULT_LOGGING_FMT,
+    #     "log_prefix": False,
+    #     "logs_file": False,
+    # }
 
     map_ = get_mapping(args.map)
     exceptions_ = get_mapping(args.exceptions)
@@ -123,7 +91,7 @@ if __name__ == "__main__":
         % (address, port, upstream_address, upstream_port)
     )
 
-    main(
+    main_(
         (address, port),
         (upstream_address, upstream_port),
         timeout,
@@ -133,3 +101,38 @@ if __name__ == "__main__":
         map_,
         exceptions_,
     )
+
+
+def main_(
+    local_server_address=(LOCAL_ADDRESS, LOCAL_PORT),
+    dns_server_address=(UPSTREAM_ADDRESS, UPSTREAM_PORT),
+    timeout=DEFAULT_TIMEOUT,
+    log_format="",
+    log_prefix=False,
+    logs_file: str | bool = False,
+    map={},
+    exceptions={},
+):
+    resolver = MainResolver(
+        *dns_server_address, timeout=timeout, map=map, exceptions=exceptions
+    )
+
+    logger = MainLogger(log_format, log_prefix)
+
+    if logs_file:
+        logger.set_logs_file(logs_file)
+
+    server_ = DNSServer(
+        resolver, *local_server_address, logger=logger, handler=DNSHandler
+    )
+
+    try:
+        server_.start()
+
+    except KeyboardInterrupt:
+        print("Keyboard Interrupt detected. Closing...")
+        exit(0)
+
+
+if __name__ == "__main__":
+    main()
