@@ -1,21 +1,3 @@
-def get_mapping(args: list) -> dict:
-    map = {}
-
-    if len(args) == 0:
-        return map
-
-    if "," in args[0]:
-        args = args[0].split(",")
-
-    for i in args:
-        domain, _, ip = i.partition(":")
-
-        if ip:
-            map[domain] = ip
-
-    return map
-
-
 def get_section_without_defaults(parser: ConfigParser, section: str) -> dict:
     if parser.has_section(section):
         data = {

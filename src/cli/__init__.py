@@ -84,10 +84,9 @@ def argument_parser() -> ArgumentParser:
         "--map",
         default={},
         type=parse_map,
-        nargs="+",
-        metavar="<domain:ip domain:ip ...>",
+        metavar="<domain:ip,domain:ip,...>",
         dest="map",
-        help="a map like: domain:ip,domain:ip or separated by spaces like: domain:ip domain:ip. It will answer the query for the domain with the given IP address (default: %(default)s)",
+        help="a map like: domain:ip,domain:ip. It will answer the query for the domain with the given IP address (default: %(default)s)",
     )
 
     parser.add_argument(
@@ -95,8 +94,7 @@ def argument_parser() -> ArgumentParser:
         "--exceptions",
         default={},
         type=parse_exceptions,
-        nargs="+",
-        metavar="<domain:ip domain:ip ...>",
+        metavar="<domain:ip,domain:ip,...>",
         dest="exceptions",
         help="similar to parameter --map. If the client's IP address matches the given IP and the client is asking for the given domain, the local server will be forced to ask the upstream DNS server for that domain, even if that domain is manually mapped to the specified IP in the MAP section (default: %(default)s)",
     )

@@ -11,26 +11,13 @@ from constants import (
     UPSTREAM_PORT,
 )
 from dns import MainLogger, MainResolver
-from utils import get_mapping, get_section_without_defaults, parse_logs_file
+from utils import get_section_without_defaults, parse_logs_file
 
 
 def main() -> None:
     args = Args.parse_args()
 
-    # defaults = {
-    #     "address": LOCAL_ADDRESS,
-    #     "port": LOCAL_PORT,
-    #     "upstream": f"{UPSTREAM_ADDRESS}:{UPSTREAM_PORT}",
-    #     "timeout": DEFAULT_TIMEOUT,
-    #     "log_format": DEFAULT_LOGGING_FMT,
-    #     "log_prefix": False,
-    #     "logs_file": False,
-    # }
-
-    map_ = get_mapping(args.map)
-    exceptions_ = get_mapping(args.exceptions)
-
-    if args.save_config or not args.use_args:
+    if args.save_config or not args.force_args:
         c_parser = ConfigParser(defaults=defaults)
 
         for section in ("SAVED", "MAP", "EXCEPTIONS"):
@@ -56,7 +43,7 @@ def main() -> None:
             with open(config_file_route, "w") as file:
                 c_parser.write(file)
 
-        if not args.use_args:
+        if not args.force_args:
             found_ = c_parser.read(config_file_route)
 
             if found_:
@@ -71,9 +58,9 @@ def main() -> None:
                 exceptions_ = get_section_without_defaults(c_parser, "EXCEPTIONS")
 
             else:
-                args.use_args = True
+                args.force_args = True
 
-    if args.use_args:
+    if args.force_args:
         address = args.address
         port = args.port
         upstream = args.upstream

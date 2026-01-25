@@ -1,16 +1,19 @@
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional
+from ipaddress import IPv4Address
+from typing import Any, Mapping, Optional, Sequence
+
+from dnslib import DNSLabel
 
 
 @dataclass
 class Settings:
-    laddress: Optional[str]
+    laddress: Optional[IPv4Address]
     lport: Optional[int]
-    uaddress: Optional[str]
+    uaddress: Optional[IPv4Address]
     uport: Optional[int]
     timeout: Optional[int]
-    map: Mapping[str, str]
-    exceptions: Mapping[str, str]
+    map: Mapping[DNSLabel, IPv4Address]
+    exceptions: Mapping[DNSLabel, Sequence[IPv4Address]]
     vars: Mapping[str, Any]
     log_format: Optional[str]
     log_prefix: Optional[str]
