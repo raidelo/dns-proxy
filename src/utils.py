@@ -1,15 +1,9 @@
-def get_section_without_defaults(parser: ConfigParser, section: str) -> dict:
-    if parser.has_section(section):
-        data = {
-            item[0]: item[1]
-            for item in parser.items(section)
-            if item not in parser.items(parser.default_section)
-            and not item[0].startswith("$")
-        }
+from typing import Any, Mapping, TypeGuard
 
-        return data
-
-    return {}
+from toml import load
+from config_repr import ConfigData
+from constants import DEFAULT_SETTINGS_FILE
+from models import ConfigDict
 
 
 def parse_logs_file(logs_file: str, default_value: str):
@@ -31,3 +25,37 @@ def parse_logs_file(logs_file: str, default_value: str):
 
     else:
         return default_value if logs_file else logs_file
+
+
+def validate(value: Mapping[str, Any]) -> TypeGuard[ConfigDict]:
+    v1 = isinstance(value.get("settings"), dict)
+    v2 = isinstance(value.get("vars"), dict)
+    v3 = isinstance(value.get("map"), dict)
+    v4 = isinstance(value.get("exceptions"), dict)
+
+    return v1 and v2 and v3 and v4
+
+
+def get_config() -> ConfigData:
+    raw_config: dict[str, Any] = load(DEFAULT_SETTINGS_FILE)
+
+    if not validate(raw_config):
+        raise ValueError()
+
+    data: ConfigDict = raw_config
+
+    return ConfigData.from_dict(data)
+
+
+def update(s: ConfigData, d: ConfigData) -> None:
+    for k, v in d.settings.__dict__.items():
+        s.settings.__dict__[k] = v
+
+    for k, v in d.map.__dict__.items():
+        s.map.__dict__[k] = v
+
+    for k, v in d.exceptions.__dict__.items():
+        s.exceptions.__dict__[k] = v
+
+    for k, v in d.vars.__dict__.items():
+        s.vars.__dict__[k] = v

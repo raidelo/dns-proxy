@@ -1,13 +1,15 @@
 from ipaddress import IPv4Address
-from typing import Mapping, Sequence, cast
+from typing import Mapping, Sequence
 
 from dnslib import DNSLabel
 from dnslib.server import DNSHandler, DNSServer
-from toml import load
 
 from cli.types_ import Args
-from config_repr import ConfigData
+from config_repr import ConfigData, Settings
 from constants import (
+    DEFAULT_LOGGING_FMT,
+    DEFAULT_LOGGING_PREFIX,
+    DEFAULT_LOGS_FILE,
     DEFAULT_SETTINGS_FILE,
     DEFAULT_TIMEOUT,
     LOCAL_ADDRESS,
@@ -16,70 +18,84 @@ from constants import (
     UPSTREAM_PORT,
 )
 from dns import MainLogger, MainResolver
-from models import ConfigDict
-
-defaults = """
-[defaults]
-laddress = "0.0.0.0"
-lport = 53
-uaddress = "1.1.1.1"
-uport = 53
-timeout = 5
-log_format = "request,reply,truncated,error"
-log_prefix = "undefined"
-logs_file = "dns_logs.log"
-"""
-
-
-def get_config() -> ConfigData:
-    data: ConfigDict = cast(
-        ConfigDict, load(DEFAULT_SETTINGS_FILE)
-    )  # TODO: replace casting
-    return ConfigData.from_dict(data)
+from utils import get_config, update
 
 
 def main() -> None:
     args = Args.parse_args()
 
+    config = ConfigData(
+        settings=Settings(
+            laddress=IPv4Address(LOCAL_ADDRESS),
+            lport=LOCAL_PORT,
+            uaddress=IPv4Address(UPSTREAM_ADDRESS),
+            uport=UPSTREAM_PORT,
+            timeout=DEFAULT_TIMEOUT,
+            log_format=DEFAULT_LOGGING_FMT,
+            log_prefix=DEFAULT_LOGGING_PREFIX,
+            logs_file=DEFAULT_LOGS_FILE,
+        ),
+        map={},
+        exceptions={},
+        vars={},
+    )
+
     if args.force_args:
-        config = args.configuration
+        update(config, args.config)
     else:
-        config = get_config()
+        try:
+            update(config, get_config())
+        except FileNotFoundError:
+            pass
 
     if args.save_config:
-        args.configuration.save_to_file(DEFAULT_SETTINGS_FILE)
+        args.config.save_to_file(DEFAULT_SETTINGS_FILE)
 
-    print(
-        f"Server started at {config.settings.laddress}:{config.settings.lport} || Upstream server at {config.settings.uaddress}:{config.settings.uport}"
-    )
+    settings = config.settings
 
-    setup_server(
-        settings=config.settings,
+    lpart = f"Server started at {settings.laddress}:{settings.lport}"
+    rpart = f"Upstream server at {settings.uaddress}:{settings.uport}"
+    print(f"{lpart} || {rpart}")
+
+    start_server(
+        settings=settings,
         map=config.map,
-        exceptions=exceptions,
+        exceptions=config.exceptions,
     )
 
 
-def setup_server(
+def start_server(
     settings: Settings,
     map: Mapping[DNSLabel, IPv4Address],
     exceptions: Mapping[DNSLabel, Sequence[IPv4Address]],
-):
-    resolver = MainResolver(*uaddress, timeout=timeout, map=map, exceptions=exceptions)
+) -> None:
+    resolver = MainResolver(
+        address=settings.uaddress,
+        port=settings.uport,
+        timeout=settings.timeout,
+        map=map,
+        exceptions=exceptions,
+    )
 
-    logger = MainLogger(log_format, log_prefix)
+    logger = MainLogger(settings.log_format, settings.log_prefix)
 
-    if logs_file:
-        logger.set_logs_file(logs_file)
+    if settings.logs_file:
+        logger.set_logs_file(settings.logs_file)
 
-    server_ = DNSServer(resolver, *laddress, logger=logger, handler=DNSHandler)
+    server = DNSServer(
+        resolver=resolver,
+        address=str(settings.laddress),
+        port=settings.lport,
+        logger=logger,
+        handler=DNSHandler,
+    )
 
     try:
-        server_.start()
+        server.start()
 
     except KeyboardInterrupt:
-        print("Keyboard Interrupt detected. Closing...")
-        exit(0)
+        print("Keyboard Interrupt detected. Exitting ...")
+        return
 
 
 if __name__ == "__main__":

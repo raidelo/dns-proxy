@@ -1,6 +1,15 @@
+from pathlib import Path
+
+
 class MainResolver(ProxyResolver):
     def __init__(
-        self, address, port, timeout=0, strip_aaaa=False, map={}, exceptions={}
+        self,
+        address,
+        port,
+        timeout=0,
+        strip_aaaa=False,
+        map={},
+        exceptions={},
     ):
         self.map = map
         self.exceptions = exceptions
@@ -93,7 +102,7 @@ class MainLogger(DNSLogger):
 
         self.logs_file.flush()
 
-    def set_logs_file(self, logs_file: str):
+    def set_logs_file(self, logs_file: Path):
         try:
             self.logs_file = open(logs_file, "wb")
             self.logf = self.log_dumper

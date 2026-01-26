@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from ipaddress import IPv4Address
+from ipaddress import AddressValueError, IPv4Address
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 
@@ -15,7 +15,7 @@ from constants import (
     UPSTREAM_ADDRESS,
     UPSTREAM_PORT,
 )
-from models import ConfigDict, ExceptionsDict, MapDict, SettingsDict
+from models import ConfigDict, ExceptionsDict, MapDict, SettingsDict, VarsDict
 
 DEFAULT_SETTINGS: SettingsDict = {
     "laddress": LOCAL_ADDRESS,
@@ -67,31 +67,56 @@ class ConfigData:
         settings = val.get("settings", default=DEFAULT_SETTINGS)
         map = val.get("map", default={})
         exceptions = val.get("exceptions", default={})
+        vars = val.get("vars", default={})
         return ConfigData(
             settings=Settings.from_dict(settings),
-            map=parse_map_sect(map),
-            exceptions=parse_exceptions_sect(exceptions),
+            map=parse_map_sect(map, vars=vars),
+            exceptions=parse_exceptions_sect(exceptions, vars=vars),
             vars=val.get("vars", default={}),
         )
 
-    def save_to_file(self) -> None:
+    def save_to_file(self, path: Path) -> None:
         raise NotImplementedError()  # TODO: todo
 
 
-def parse_map_sect(map: MapDict) -> Mapping[DNSLabel, IPv4Address]:
-    nmap: Mapping[DNSLabel, IPv4Address] = {}
-    for k, v in map.items():
-        nmap[DNSLabel(k)] = IPv4Address(v)
-    return nmap
+def parse_map_sect(
+    map: MapDict,
+    vars: Optional[VarsDict],
+) -> Mapping[DNSLabel, IPv4Address]:
+    new_map: Mapping[DNSLabel, IPv4Address] = {}
+    for domain, ip_str in map.items():
+        new_key = DNSLabel(domain)
+        try:
+            new_ip = IPv4Address(ip_str)
+        except AddressValueError:
+            if vars is None:
+                raise
+
+            for key, value in vars.items():
+                ip_str.replace(f"${{{key}}}", value)
+            new_ip = IPv4Address(ip_str)
+        new_map[new_key] = new_ip
+    return new_map
 
 
 def parse_exceptions_sect(
     exceptions: ExceptionsDict,
+    vars: Optional[VarsDict],
 ) -> Mapping[DNSLabel, Sequence[IPv4Address]]:
-    nmap: Mapping[DNSLabel, Sequence[IPv4Address]] = {}
-    for k, v in exceptions.items():
-        seq: Sequence[IPv4Address] = []
-        for item in v:
-            seq.append(IPv4Address(item))
-        nmap[DNSLabel(k)] = seq
-    return nmap
+    new_exc: Mapping[DNSLabel, Sequence[IPv4Address]] = {}
+    for domain, ip_seq in exceptions.items():
+        new_key = DNSLabel(domain)
+        new_ip_seq: list[IPv4Address] = []
+        for ip_str in ip_seq:
+            try:
+                new_ip = IPv4Address(ip_str)
+            except AddressValueError:
+                if vars is None:
+                    raise
+
+                for key, value in vars.items():
+                    ip_str.replace(f"${{{key}}}", value)
+                new_ip = IPv4Address(ip_str)
+            new_ip_seq.append(new_ip)
+        new_exc[new_key] = new_ip_seq
+    return new_exc

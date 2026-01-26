@@ -17,7 +17,7 @@ class UpstreamServer:
 
 @dataclass()
 class Args:
-    configuration: ConfigData
+    config: ConfigData
     save_config: Optional[str]
     force_args: bool
 
@@ -40,7 +40,7 @@ class Args:
             vars={},
         )
         return Args(
-            configuration=configuration,
+            config=configuration,
             save_config=args.save_config,
             force_args=args.force_args,
         )
