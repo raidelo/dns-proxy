@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from ipaddress import IPv4Address
 
 from cli.types_ import UpstreamServer
-from cli.utils import parse_exceptions, parse_map
+from cli.utils import parse_exceptions_arg, parse_map_arg
 from constants import (
     DEFAULT_LOGGING_FMT,
     DEFAULT_LOGGING_PREFIX,
@@ -83,7 +83,7 @@ def argument_parser() -> ArgumentParser:
         "-m",
         "--map",
         default={},
-        type=parse_map,
+        type=parse_map_arg,
         metavar="<domain:ip,domain:ip,...>",
         dest="map",
         help="a map like: domain:ip,domain:ip. It will answer the query for the domain with the given IP address (default: %(default)s)",
@@ -93,7 +93,7 @@ def argument_parser() -> ArgumentParser:
         "-x",
         "--exceptions",
         default={},
-        type=parse_exceptions,
+        type=parse_exceptions_arg,
         metavar="<domain:ip,domain:ip,...>",
         dest="exceptions",
         help="similar to parameter --map. If the client's IP address matches the given IP and the client is asking for the given domain, the local server will be forced to ask the upstream DNS server for that domain, even if that domain is manually mapped to the specified IP in the MAP section (default: %(default)s)",

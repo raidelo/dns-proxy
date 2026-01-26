@@ -30,7 +30,7 @@ DEFAULT_SETTINGS: SettingsDict = {
 
 
 @dataclass
-class Settings:
+class ServerSettings:
     laddress: IPv4Address
     lport: int
     uaddress: IPv4Address
@@ -41,9 +41,9 @@ class Settings:
     logs_file: Path
 
     @classmethod
-    def from_dict(cls, val: SettingsDict) -> "Settings":
+    def from_dict(cls, val: SettingsDict) -> "ServerSettings":
         logs_file = val.get("logs_file")
-        return Settings(
+        return ServerSettings(
             laddress=IPv4Address(val.get("laddress", default=LOCAL_ADDRESS)),
             lport=val.get("lport", default=LOCAL_PORT),
             uaddress=IPv4Address(val.get("uaddress", default=UPSTREAM_ADDRESS)),
@@ -56,20 +56,20 @@ class Settings:
 
 
 @dataclass
-class ConfigData:
-    settings: Settings
+class MainConfig:
+    settings: ServerSettings
     map: Mapping[DNSLabel, IPv4Address]
     exceptions: Mapping[DNSLabel, Sequence[IPv4Address]]
     vars: Mapping[str, Any]
 
     @classmethod
-    def from_dict(cls, val: ConfigDict) -> "ConfigData":
+    def from_dict(cls, val: ConfigDict) -> "MainConfig":
         settings = val.get("settings", default=DEFAULT_SETTINGS)
         map = val.get("map", default={})
         exceptions = val.get("exceptions", default={})
         vars = val.get("vars", default={})
-        return ConfigData(
-            settings=Settings.from_dict(settings),
+        return MainConfig(
+            settings=ServerSettings.from_dict(settings),
             map=parse_map_sect(map, vars=vars),
             exceptions=parse_exceptions_sect(exceptions, vars=vars),
             vars=val.get("vars", default={}),

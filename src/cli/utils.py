@@ -4,7 +4,7 @@ from typing import Mapping, Sequence
 from dnslib import DNSLabel
 
 
-def parse_map(value: str) -> Mapping[DNSLabel, IPv4Address]:
+def parse_map_arg(value: str) -> Mapping[DNSLabel, IPv4Address]:
     map: Mapping[DNSLabel, IPv4Address] = {}
 
     for pair in value.split(","):
@@ -17,5 +17,5 @@ def parse_map(value: str) -> Mapping[DNSLabel, IPv4Address]:
     return map
 
 
-def parse_exceptions(value: str) -> Mapping[str, Sequence[IPv4Address]]:
+def parse_exceptions_arg(value: str) -> Mapping[str, Sequence[IPv4Address]]:
     raise NotImplementedError()  # TODO: todo

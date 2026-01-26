@@ -4,7 +4,7 @@ from ipaddress import IPv4Address
 from typing import Optional
 
 from cli import argument_parser
-from config_repr import ConfigData, Settings
+from config_repr import MainConfig, ServerSettings
 
 
 class UpstreamServer:
@@ -15,15 +15,15 @@ class UpstreamServer:
         self.port = int(port)
 
 
-@dataclass()
+@dataclass
 class Args:
-    config: ConfigData
+    config: MainConfig
     save_config: Optional[str]
     force_args: bool
 
     @classmethod
     def from_args(cls, args: Namespace) -> "Args":
-        settings = Settings(
+        settings = ServerSettings(
             laddress=args.laddress,
             lport=args.lport,
             uaddress=args.upstream.address,
@@ -33,14 +33,14 @@ class Args:
             log_prefix=args.log_prefix,
             logs_file=args.logs_file,
         )
-        configuration = ConfigData(
+        config = MainConfig(
             settings=settings,
             map=args.map,
             exceptions=args.exceptions,
             vars={},
         )
         return Args(
-            config=configuration,
+            config=config,
             save_config=args.save_config,
             force_args=args.force_args,
         )

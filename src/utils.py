@@ -1,7 +1,9 @@
+from pathlib import Path
 from typing import Any, Mapping, TypeGuard
 
 from toml import load
-from config_repr import ConfigData
+from cli.types_ import Args
+from config_repr import MainConfig
 from constants import DEFAULT_SETTINGS_FILE
 from models import ConfigDict
 
@@ -36,7 +38,7 @@ def validate(value: Mapping[str, Any]) -> TypeGuard[ConfigDict]:
     return v1 and v2 and v3 and v4
 
 
-def get_config() -> ConfigData:
+def get_config() -> MainConfig:
     raw_config: dict[str, Any] = load(DEFAULT_SETTINGS_FILE)
 
     if not validate(raw_config):
@@ -44,10 +46,10 @@ def get_config() -> ConfigData:
 
     data: ConfigDict = raw_config
 
-    return ConfigData.from_dict(data)
+    return MainConfig.from_dict(data)
 
 
-def update(s: ConfigData, d: ConfigData) -> None:
+def update(s: MainConfig, d: MainConfig) -> None:
     for k, v in d.settings.__dict__.items():
         s.settings.__dict__[k] = v
 
@@ -59,3 +61,13 @@ def update(s: ConfigData, d: ConfigData) -> None:
 
     for k, v in d.vars.__dict__.items():
         s.vars.__dict__[k] = v
+
+
+def save_to_config(config: MainConfig, file: Path) -> None:
+    raise NotImplementedError()  # TODO: todo
+
+
+def update_config_file(args: Args, overwrite: bool = False) -> None:
+    fconfig = get_config()
+    update(fconfig, args.config)
+    save_to_config(fconfig, DEFAULT_SETTINGS_FILE)

@@ -5,7 +5,7 @@ from dnslib import DNSLabel
 from dnslib.server import DNSHandler, DNSServer
 
 from cli.types_ import Args
-from config_repr import ConfigData, Settings
+from config_repr import MainConfig, ServerSettings
 from constants import (
     DEFAULT_LOGGING_FMT,
     DEFAULT_LOGGING_PREFIX,
@@ -18,14 +18,16 @@ from constants import (
     UPSTREAM_PORT,
 )
 from dns import MainLogger, MainResolver
-from utils import get_config, update
+from utils import get_config, update, update_config_file
+
+OVERWRITE_SETTINGS_FILE = False  # TODO: add argument to handle this value
 
 
 def main() -> None:
     args = Args.parse_args()
 
-    config = ConfigData(
-        settings=Settings(
+    mconfig = MainConfig(
+        settings=ServerSettings(
             laddress=IPv4Address(LOCAL_ADDRESS),
             lport=LOCAL_PORT,
             uaddress=IPv4Address(UPSTREAM_ADDRESS),
@@ -41,17 +43,17 @@ def main() -> None:
     )
 
     if args.force_args:
-        update(config, args.config)
+        update(mconfig, args.config)
     else:
         try:
-            update(config, get_config())
+            update(mconfig, get_config())
         except FileNotFoundError:
             pass
 
     if args.save_config:
-        args.config.save_to_file(DEFAULT_SETTINGS_FILE)
+        update_config_file(args.config, overwrite=OVERWRITE_SETTINGS_FILE)
 
-    settings = config.settings
+    settings = mconfig.settings
 
     lpart = f"Server started at {settings.laddress}:{settings.lport}"
     rpart = f"Upstream server at {settings.uaddress}:{settings.uport}"
@@ -59,13 +61,13 @@ def main() -> None:
 
     start_server(
         settings=settings,
-        map=config.map,
-        exceptions=config.exceptions,
+        map=mconfig.map,
+        exceptions=mconfig.exceptions,
     )
 
 
 def start_server(
-    settings: Settings,
+    settings: ServerSettings,
     map: Mapping[DNSLabel, IPv4Address],
     exceptions: Mapping[DNSLabel, Sequence[IPv4Address]],
 ) -> None:
