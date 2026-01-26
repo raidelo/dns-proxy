@@ -6,4 +6,5 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "dnslib>=0.9.26",
+    "toml>=0.10.2",
 ]

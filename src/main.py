@@ -1,7 +1,12 @@
-from configparser import ConfigParser
+from ipaddress import IPv4Address
+from typing import Mapping, Sequence, cast
 
+from dnslib import DNSLabel
 from dnslib.server import DNSHandler, DNSServer
+from toml import load
+
 from cli.types_ import Args
+from config_repr import ConfigData
 from constants import (
     DEFAULT_SETTINGS_FILE,
     DEFAULT_TIMEOUT,
@@ -11,107 +16,63 @@ from constants import (
     UPSTREAM_PORT,
 )
 from dns import MainLogger, MainResolver
-from utils import get_section_without_defaults, parse_logs_file
+from models import ConfigDict
+
+defaults = """
+[defaults]
+laddress = "0.0.0.0"
+lport = 53
+uaddress = "1.1.1.1"
+uport = 53
+timeout = 5
+log_format = "request,reply,truncated,error"
+log_prefix = "undefined"
+logs_file = "dns_logs.log"
+"""
+
+
+def get_config() -> ConfigData:
+    data: ConfigDict = cast(
+        ConfigDict, load(DEFAULT_SETTINGS_FILE)
+    )  # TODO: replace casting
+    return ConfigData.from_dict(data)
 
 
 def main() -> None:
     args = Args.parse_args()
 
-    if args.save_config or not args.force_args:
-        c_parser = ConfigParser(defaults=defaults)
-
-        for section in ("SAVED", "MAP", "EXCEPTIONS"):
-            c_parser.add_section(section)
-
-        config_file_route = (
-            args.save_config if args.save_config else DEFAULT_SETTINGS_FILE
-        )
-
-        if args.save_config:
-            for arg, xdefect_value in defaults.items():
-                dict_args = dict(args._get_kwargs())
-
-                if dict_args[arg] != xdefect_value:
-                    c_parser.set("SAVED", arg, str(dict_args[arg]))
-
-            if map_:
-                c_parser["MAP"] = map_
-
-            if exceptions_:
-                c_parser["EXCEPTIONS"] = exceptions_
-
-            with open(config_file_route, "w") as file:
-                c_parser.write(file)
-
-        if not args.force_args:
-            found_ = c_parser.read(config_file_route)
-
-            if found_:
-                address = c_parser.get("SAVED", "address")
-                port = c_parser.getint("SAVED", "port")
-                upstream = c_parser.get("SAVED", "upstream")
-                timeout = c_parser.getint("SAVED", "timeout")
-                log_format = c_parser.get("SAVED", "log_format")
-                log_prefix = c_parser.getboolean("SAVED", "log_prefix")
-                logs_file = c_parser.get("SAVED", "logs_file")
-                map_ = get_section_without_defaults(c_parser, "MAP")
-                exceptions_ = get_section_without_defaults(c_parser, "EXCEPTIONS")
-
-            else:
-                args.force_args = True
-
     if args.force_args:
-        address = args.address
-        port = args.port
-        upstream = args.upstream
-        timeout = args.timeout
-        log_format = args.log_format
-        log_prefix = args.log_prefix
-        logs_file = args.logs_file
+        config = args.configuration
+    else:
+        config = get_config()
 
-    upstream_address, _, upstream_port = upstream.partition(":")
-
-    upstream_port = int(upstream_port or 53)
+    if args.save_config:
+        args.configuration.save_to_file(DEFAULT_SETTINGS_FILE)
 
     print(
-        "Server started at %s:%d || Remote server at %s:%d"
-        % (address, port, upstream_address, upstream_port)
+        f"Server started at {config.settings.laddress}:{config.settings.lport} || Upstream server at {config.settings.uaddress}:{config.settings.uport}"
     )
 
-    main_(
-        (address, port),
-        (upstream_address, upstream_port),
-        timeout,
-        log_format,
-        log_prefix,
-        parse_logs_file(logs_file, default_value=default_logs_file),
-        map_,
-        exceptions_,
+    setup_server(
+        settings=config.settings,
+        map=config.map,
+        exceptions=exceptions,
     )
 
 
-def main_(
-    local_server_address=(LOCAL_ADDRESS, LOCAL_PORT),
-    dns_server_address=(UPSTREAM_ADDRESS, UPSTREAM_PORT),
-    timeout=DEFAULT_TIMEOUT,
-    log_format="",
-    log_prefix=False,
-    logs_file: str | bool = False,
-    map={},
-    exceptions={},
+def setup_server(
+    settings: Settings,
+    map: Mapping[DNSLabel, IPv4Address],
+    exceptions: Mapping[DNSLabel, Sequence[IPv4Address]],
 ):
-    resolver = MainResolver(
-        *dns_server_address, timeout=timeout, map=map, exceptions=exceptions
-    )
+    resolver = MainResolver(*uaddress, timeout=timeout, map=map, exceptions=exceptions)
 
     logger = MainLogger(log_format, log_prefix)
 
     if logs_file:
         logger.set_logs_file(logs_file)
 
-    server_ = DNSServer(
-        resolver, *local_server_address, logger=logger, handler=DNSHandler
-    )
+    server_ = DNSServer(resolver, *laddress, logger=logger, handler=DNSHandler)
 
     try:
         server_.start()

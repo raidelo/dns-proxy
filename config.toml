@@ -1,13 +1,3 @@
-[defaults]
-laddress = "0.0.0.0"
-lport = 53
-uaddress = "1.1.1.1"
-uport = 53
-timeout = 5
-log_format = "request,reply,truncated,error"
-# log_prefix = "undefined"
-logs_file = "dns_logs.log"
-
 [settings]
 laddress = "192.168.1.2"
 uaddress = "8.8.8.8"
