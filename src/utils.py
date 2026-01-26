@@ -4,7 +4,7 @@ from typing import Any, Mapping, TypeGuard
 from toml import load
 from cli.types_ import Args
 from config_repr import MainConfig
-from constants import DEFAULT_SETTINGS_FILE
+from constants import DEFAULT_CONFIG_FILE
 from models import ConfigDict
 
 
@@ -39,7 +39,7 @@ def validate(value: Mapping[str, Any]) -> TypeGuard[ConfigDict]:
 
 
 def get_config() -> MainConfig:
-    raw_config: dict[str, Any] = load(DEFAULT_SETTINGS_FILE)
+    raw_config: dict[str, Any] = load(DEFAULT_CONFIG_FILE)
 
     if not validate(raw_config):
         raise ValueError()
@@ -49,25 +49,29 @@ def get_config() -> MainConfig:
     return MainConfig.from_dict(data)
 
 
-def update(s: MainConfig, d: MainConfig) -> None:
-    for k, v in d.settings.__dict__.items():
-        s.settings.__dict__[k] = v
+def update(this: MainConfig, with_: MainConfig) -> None:
+    for k, v in with_.settings.__dict__.items():
+        this.settings.__dict__[k] = v
 
-    for k, v in d.map.__dict__.items():
-        s.map.__dict__[k] = v
+    for k, v in with_.map.__dict__.items():
+        this.map.__dict__[k] = v
 
-    for k, v in d.exceptions.__dict__.items():
-        s.exceptions.__dict__[k] = v
+    for k, v in with_.exceptions.__dict__.items():
+        this.exceptions.__dict__[k] = v
 
-    for k, v in d.vars.__dict__.items():
-        s.vars.__dict__[k] = v
-
-
-def save_to_config(config: MainConfig, file: Path) -> None:
-    raise NotImplementedError()  # TODO: todo
+    for k, v in with_.vars.__dict__.items():
+        this.vars.__dict__[k] = v
 
 
-def update_config_file(args: Args, overwrite: bool = False) -> None:
+def save_to_config(config: MainConfig, path: Path) -> None:
+    raise NotImplementedError()  # TODO: implement
+
+
+def update_config_file(
+    config: MainConfig,
+    config_file: Path,
+    overwrite: bool = False,  # TODO: implement
+) -> None:
     fconfig = get_config()
-    update(fconfig, args.config)
-    save_to_config(fconfig, DEFAULT_SETTINGS_FILE)
+    update(fconfig, config)
+    save_to_config(fconfig, config_file)

@@ -10,7 +10,7 @@ from constants import (
     DEFAULT_LOGGING_FMT,
     DEFAULT_LOGGING_PREFIX,
     DEFAULT_LOGS_FILE,
-    DEFAULT_SETTINGS_FILE,
+    DEFAULT_CONFIG_FILE,
     DEFAULT_TIMEOUT,
     LOCAL_ADDRESS,
     LOCAL_PORT,
@@ -20,7 +20,7 @@ from constants import (
 from dns import MainLogger, MainResolver
 from utils import get_config, update, update_config_file
 
-OVERWRITE_SETTINGS_FILE = False  # TODO: add argument to handle this value
+OVERWRITE_CONFIG_FILE = False  # TODO: add argument to handle this value
 
 
 def main() -> None:
@@ -51,7 +51,11 @@ def main() -> None:
             pass
 
     if args.save_config:
-        update_config_file(args.config, overwrite=OVERWRITE_SETTINGS_FILE)
+        update_config_file(
+            config=args.config,
+            config_file=DEFAULT_CONFIG_FILE,
+            overwrite=OVERWRITE_CONFIG_FILE,
+        )
 
     settings = mconfig.settings
 

@@ -7,7 +7,7 @@ from constants import (
     DEFAULT_LOGGING_FMT,
     DEFAULT_LOGGING_PREFIX,
     DEFAULT_LOGS_FILE,
-    DEFAULT_SETTINGS_FILE,
+    DEFAULT_CONFIG_FILE,
     DEFAULT_TIMEOUT,
     LOCAL_ADDRESS,
     LOCAL_PORT,
@@ -62,7 +62,7 @@ def argument_parser() -> ArgumentParser:
     parser.add_argument(
         "--save-config",
         default=None,
-        const=DEFAULT_SETTINGS_FILE,
+        const=DEFAULT_CONFIG_FILE,
         type=str,
         nargs="?",
         metavar="<config_file>",
