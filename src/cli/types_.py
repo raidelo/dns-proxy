@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from ipaddress import IPv4Address
 from typing import Optional
 
-from cli import argument_parser
 from config_repr import MainConfig, ServerSettings
 
 
@@ -47,5 +46,7 @@ class Args:
 
     @classmethod
     def parse_args(cls) -> "Args":
+        from cli import argument_parser
+
         args = argument_parser().parse_args()
         return cls.from_args(args)

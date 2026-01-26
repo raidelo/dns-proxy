@@ -6,27 +6,16 @@ from typing import Any, Mapping, Optional, Sequence
 from dnslib import DNSLabel
 
 from constants import (
-    DEFAULT_LOGGING_FMT,
-    DEFAULT_LOGGING_PREFIX,
-    DEFAULT_LOGS_FILE,
-    DEFAULT_TIMEOUT,
-    LOCAL_ADDRESS,
-    LOCAL_PORT,
-    UPSTREAM_ADDRESS,
-    UPSTREAM_PORT,
+    LOG_FORMAT,
+    LOG_PREFIX,
+    LOGS_FILE,
+    TIMEOUT,
+    LADDRESS,
+    LPORT,
+    UADDRESS,
+    UPORT,
 )
 from models import ConfigDict, ExceptionsDict, MapDict, SettingsDict, VarsDict
-
-DEFAULT_SETTINGS: SettingsDict = {
-    "laddress": LOCAL_ADDRESS,
-    "lport": LOCAL_PORT,
-    "uaddress": UPSTREAM_ADDRESS,
-    "uport": UPSTREAM_PORT,
-    "timeout": DEFAULT_TIMEOUT,
-    "log_format": DEFAULT_LOGGING_FMT,
-    "log_prefix": DEFAULT_LOGGING_PREFIX,
-    "logs_file": DEFAULT_LOGS_FILE.as_posix(),
-}
 
 
 @dataclass
@@ -44,14 +33,14 @@ class ServerSettings:
     def from_dict(cls, val: SettingsDict) -> "ServerSettings":
         logs_file = val.get("logs_file")
         return ServerSettings(
-            laddress=IPv4Address(val.get("laddress", default=LOCAL_ADDRESS)),
-            lport=val.get("lport", default=LOCAL_PORT),
-            uaddress=IPv4Address(val.get("uaddress", default=UPSTREAM_ADDRESS)),
-            uport=val.get("uport", default=UPSTREAM_PORT),
-            timeout=val.get("timeout", default=DEFAULT_TIMEOUT),
-            log_format=val.get("log_format", default=DEFAULT_LOGGING_FMT),
-            log_prefix=val.get("log_prefix", default=DEFAULT_LOGGING_PREFIX),
-            logs_file=Path(logs_file) if logs_file else DEFAULT_LOGS_FILE,
+            laddress=IPv4Address(val.get("laddress", LADDRESS)),
+            lport=val.get("lport", LPORT),
+            uaddress=IPv4Address(val.get("uaddress", UADDRESS)),
+            uport=val.get("uport", UPORT),
+            timeout=val.get("timeout", TIMEOUT),
+            log_format=val.get("log_format", LOG_FORMAT),
+            log_prefix=val.get("log_prefix", LOG_PREFIX),
+            logs_file=Path(logs_file) if logs_file else LOGS_FILE,
         )
 
 
@@ -64,19 +53,16 @@ class MainConfig:
 
     @classmethod
     def from_dict(cls, val: ConfigDict) -> "MainConfig":
-        settings = val.get("settings", default=DEFAULT_SETTINGS)
-        map = val.get("map", default={})
-        exceptions = val.get("exceptions", default={})
-        vars = val.get("vars", default={})
+        settings = val.get("settings", {})
+        map = val.get("map", {})
+        exceptions = val.get("exceptions", {})
+        vars = val.get("vars", {})
         return MainConfig(
             settings=ServerSettings.from_dict(settings),
             map=parse_map_sect(map, vars=vars),
             exceptions=parse_exceptions_sect(exceptions, vars=vars),
-            vars=val.get("vars", default={}),
+            vars=val.get("vars", {}),
         )
-
-    def save_to_file(self, path: Path) -> None:
-        raise NotImplementedError()  # TODO: todo
 
 
 def parse_map_sect(
@@ -93,7 +79,7 @@ def parse_map_sect(
                 raise
 
             for key, value in vars.items():
-                ip_str.replace(f"${{{key}}}", value)
+                ip_str = ip_str.replace(f"${{{key}}}", value)
             new_ip = IPv4Address(ip_str)
         new_map[new_key] = new_ip
     return new_map
@@ -115,7 +101,7 @@ def parse_exceptions_sect(
                     raise
 
                 for key, value in vars.items():
-                    ip_str.replace(f"${{{key}}}", value)
+                    ip_str = ip_str.replace(f"${{{key}}}", value)
                 new_ip = IPv4Address(ip_str)
             new_ip_seq.append(new_ip)
         new_exc[new_key] = new_ip_seq

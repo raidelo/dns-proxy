@@ -1,4 +1,9 @@
 from pathlib import Path
+from time import strftime
+
+from dnslib import QTYPE, RCODE, RR
+from dnslib.proxy import ProxyResolver
+from dnslib.server import DNSLogger
 
 
 class MainResolver(ProxyResolver):
@@ -98,16 +103,16 @@ class MainLogger(DNSLogger):
     def log_dumper(self, data):
         print(data)
 
-        self.logs_file.write(data.encode() + b"\n")
-
-        self.logs_file.flush()
+        if self.logs_file:
+            self.logs_file.write(data.encode() + b"\n")
+            self.logs_file.flush()
 
     def set_logs_file(self, logs_file: Path):
         try:
             self.logs_file = open(logs_file, "wb")
             self.logf = self.log_dumper
 
-        except:
+        except Exception:
             print("error: failed to open the log file")
 
     def __del__(self):

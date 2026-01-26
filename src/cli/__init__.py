@@ -4,15 +4,15 @@ from ipaddress import IPv4Address
 from cli.types_ import UpstreamServer
 from cli.utils import parse_exceptions_arg, parse_map_arg
 from constants import (
-    DEFAULT_LOGGING_FMT,
-    DEFAULT_LOGGING_PREFIX,
-    DEFAULT_LOGS_FILE,
-    DEFAULT_CONFIG_FILE,
-    DEFAULT_TIMEOUT,
-    LOCAL_ADDRESS,
-    LOCAL_PORT,
-    UPSTREAM_ADDRESS,
-    UPSTREAM_PORT,
+    LOG_FORMAT,
+    LOG_PREFIX,
+    LOGS_FILE,
+    CONFIG_FILE,
+    TIMEOUT,
+    LADDRESS,
+    LPORT,
+    UADDRESS,
+    UPORT,
 )
 
 
@@ -22,7 +22,7 @@ def argument_parser() -> ArgumentParser:
     parser.add_argument(
         "-b",
         "--bind",
-        default=LOCAL_ADDRESS,
+        default=LADDRESS,
         type=IPv4Address,
         metavar="<laddress>",
         dest="laddress",
@@ -31,18 +31,17 @@ def argument_parser() -> ArgumentParser:
 
     parser.add_argument(
         "lport",
-        default=LOCAL_PORT,
+        default=LPORT,
         type=int,
         nargs="?",
         metavar="<lport>",
-        dest="port",
         help="bind to this port (default: %(default)s)",
     )
 
     parser.add_argument(
         "-u",
         "--upstream",
-        default=f"{UPSTREAM_ADDRESS}:{UPSTREAM_PORT}",
+        default=f"{UADDRESS}:{UPORT}",
         type=UpstreamServer,
         metavar="<upstream server:port>",
         dest="upstream",
@@ -52,7 +51,7 @@ def argument_parser() -> ArgumentParser:
     parser.add_argument(
         "-t",
         "--timeout",
-        default=DEFAULT_TIMEOUT,
+        default=TIMEOUT,
         type=int,
         metavar="<timeout>",
         dest="timeout",
@@ -62,7 +61,7 @@ def argument_parser() -> ArgumentParser:
     parser.add_argument(
         "--save-config",
         default=None,
-        const=DEFAULT_CONFIG_FILE,
+        const=CONFIG_FILE,
         type=str,
         nargs="?",
         metavar="<config_file>",
@@ -101,7 +100,7 @@ def argument_parser() -> ArgumentParser:
 
     parser.add_argument(
         "--logs-file",
-        default=DEFAULT_LOGS_FILE,
+        default=LOGS_FILE,
         metavar="<logs_file>",
         dest="logs_file",
         help="file to dump the logs to (default: %(default)s)",
@@ -109,7 +108,7 @@ def argument_parser() -> ArgumentParser:
 
     parser.add_argument(
         "--log-format",
-        default=DEFAULT_LOGGING_FMT,
+        default=LOG_FORMAT,
         metavar="<log_format>",
         dest="log_format",
         help="log hooks to enable (default: +request,+reply,+truncated,+error,-recv,-send,-data)",
@@ -118,7 +117,7 @@ def argument_parser() -> ArgumentParser:
     parser.add_argument(
         "--log-prefix",
         action="store_true",
-        default=DEFAULT_LOGGING_PREFIX,
+        default=LOG_PREFIX,
         dest="log_prefix",
         help="enable log prefix (timestamp/handler/resolver) (default: %(default)s)",
     )

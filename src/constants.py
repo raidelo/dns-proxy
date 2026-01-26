@@ -1,12 +1,13 @@
 from pathlib import Path
 
-LOCAL_ADDRESS = "0.0.0.0"
-LOCAL_PORT = 53
-UPSTREAM_ADDRESS = "1.1.1.1"
-UPSTREAM_PORT = 53
-DEFAULT_TIMEOUT = 5  # seconds
+# Default server settings
+LADDRESS = "0.0.0.0"
+LPORT = 53
+UADDRESS = "1.1.1.1"
+UPORT = 53
+TIMEOUT = 5  # seconds
+LOG_FORMAT = "request,reply,truncated,error"
+LOG_PREFIX = None
+LOGS_FILE = Path(__file__).with_name("dns_logs.log")
 
-DEFAULT_LOGGING_FMT = "request,reply,truncated,error"
-DEFAULT_LOGGING_PREFIX = None
-DEFAULT_CONFIG_FILE = Path(__file__).with_name("settings.toml")
-DEFAULT_LOGS_FILE = Path(__file__).with_name("dns_logs.log")
+CONFIG_FILE = Path(__file__).with_name("settings.toml")

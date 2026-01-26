@@ -2,9 +2,8 @@ from pathlib import Path
 from typing import Any, Mapping, TypeGuard
 
 from toml import load
-from cli.types_ import Args
+
 from config_repr import MainConfig
-from constants import DEFAULT_CONFIG_FILE
 from models import ConfigDict
 
 
@@ -38,40 +37,35 @@ def validate(value: Mapping[str, Any]) -> TypeGuard[ConfigDict]:
     return v1 and v2 and v3 and v4
 
 
-def get_config() -> MainConfig:
-    raw_config: dict[str, Any] = load(DEFAULT_CONFIG_FILE)
+def load_config_file(config_file: Path) -> MainConfig:
+    raw_config: dict[str, Any] = load(config_file)
 
     if not validate(raw_config):
-        raise ValueError()
+        raise ValueError("Invalid format in the config file")
 
-    data: ConfigDict = raw_config
-
-    return MainConfig.from_dict(data)
+    return MainConfig.from_dict(raw_config)
 
 
-def update(this: MainConfig, with_: MainConfig) -> None:
-    for k, v in with_.settings.__dict__.items():
-        this.settings.__dict__[k] = v
+def _update(this: Mapping[Any, Any], with_: Mapping[Any, Any], overwrite: bool) -> None:
+    for k, v in with_.items():
+        res = this.get(k)
+        if not res or res and overwrite:
+            this[k] = v
 
-    for k, v in with_.map.__dict__.items():
-        this.map.__dict__[k] = v
 
-    for k, v in with_.exceptions.__dict__.items():
-        this.exceptions.__dict__[k] = v
-
-    for k, v in with_.vars.__dict__.items():
-        this.vars.__dict__[k] = v
+def update(this: MainConfig, with_: MainConfig, overwrite: bool) -> None:
+    _update(this.settings.__dict__, with_.settings.__dict__, overwrite)
+    _update(this.map, with_.map, overwrite)
+    _update(this.exceptions, with_.exceptions, overwrite)
+    _update(this.vars, with_.vars, overwrite)
 
 
 def save_to_config(config: MainConfig, path: Path) -> None:
-    raise NotImplementedError()  # TODO: implement
+    with path.open("r") as f:
+        toml.dump(config.__dict__, f)
 
 
-def update_config_file(
-    config: MainConfig,
-    config_file: Path,
-    overwrite: bool = False,  # TODO: implement
-) -> None:
-    fconfig = get_config()
-    update(fconfig, config)
+def update_config_file(config: MainConfig, config_file: Path, overwrite: bool) -> None:
+    fconfig = load_config_file(config_file)
+    update(fconfig, config, overwrite)
     save_to_config(fconfig, config_file)

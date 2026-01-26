@@ -7,18 +7,18 @@ from dnslib.server import DNSHandler, DNSServer
 from cli.types_ import Args
 from config_repr import MainConfig, ServerSettings
 from constants import (
-    DEFAULT_LOGGING_FMT,
-    DEFAULT_LOGGING_PREFIX,
-    DEFAULT_LOGS_FILE,
-    DEFAULT_CONFIG_FILE,
-    DEFAULT_TIMEOUT,
-    LOCAL_ADDRESS,
-    LOCAL_PORT,
-    UPSTREAM_ADDRESS,
-    UPSTREAM_PORT,
+    CONFIG_FILE,
+    LADDRESS,
+    LOG_FORMAT,
+    LOG_PREFIX,
+    LOGS_FILE,
+    LPORT,
+    TIMEOUT,
+    UADDRESS,
+    UPORT,
 )
 from dns import MainLogger, MainResolver
-from utils import get_config, update, update_config_file
+from utils import load_config_file, update, update_config_file
 
 OVERWRITE_CONFIG_FILE = False  # TODO: add argument to handle this value
 
@@ -28,14 +28,14 @@ def main() -> None:
 
     mconfig = MainConfig(
         settings=ServerSettings(
-            laddress=IPv4Address(LOCAL_ADDRESS),
-            lport=LOCAL_PORT,
-            uaddress=IPv4Address(UPSTREAM_ADDRESS),
-            uport=UPSTREAM_PORT,
-            timeout=DEFAULT_TIMEOUT,
-            log_format=DEFAULT_LOGGING_FMT,
-            log_prefix=DEFAULT_LOGGING_PREFIX,
-            logs_file=DEFAULT_LOGS_FILE,
+            laddress=IPv4Address(LADDRESS),
+            lport=LPORT,
+            uaddress=IPv4Address(UADDRESS),
+            uport=UPORT,
+            timeout=TIMEOUT,
+            log_format=LOG_FORMAT,
+            log_prefix=LOG_PREFIX,
+            logs_file=LOGS_FILE,
         ),
         map={},
         exceptions={},
@@ -43,17 +43,17 @@ def main() -> None:
     )
 
     if args.force_args:
-        update(mconfig, args.config)
+        update(mconfig, args.config, True)
     else:
         try:
-            update(mconfig, get_config())
+            update(mconfig, load_config_file(CONFIG_FILE), True)
         except FileNotFoundError:
             pass
 
     if args.save_config:
         update_config_file(
             config=args.config,
-            config_file=DEFAULT_CONFIG_FILE,
+            config_file=CONFIG_FILE,
             overwrite=OVERWRITE_CONFIG_FILE,
         )
 
@@ -62,6 +62,15 @@ def main() -> None:
     lpart = f"Server started at {settings.laddress}:{settings.lport}"
     rpart = f"Upstream server at {settings.uaddress}:{settings.uport}"
     print(f"{lpart} || {rpart}")
+
+    __import__("pprint").pprint(mconfig.__dict__)
+    try:
+        lconfig = load_config_file(CONFIG_FILE)
+        __import__("pprint").pprint(lconfig.__dict__)
+    except Exception:
+        print("Inexistent config file")
+
+    return
 
     start_server(
         settings=settings,
