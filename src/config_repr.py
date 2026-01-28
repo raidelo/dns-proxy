@@ -6,12 +6,12 @@ from typing import Any, Mapping, Optional, Sequence
 from dnslib import DNSLabel
 
 from constants import (
+    LADDRESS,
     LOG_FORMAT,
     LOG_PREFIX,
     LOGS_FILE,
-    TIMEOUT,
-    LADDRESS,
     LPORT,
+    TIMEOUT,
     UADDRESS,
     UPORT,
 )
@@ -26,7 +26,7 @@ class ServerSettings:
     uport: int
     timeout: int
     log_format: str
-    log_prefix: Optional[str]
+    log_prefix: bool
     logs_file: Path
 
     @classmethod

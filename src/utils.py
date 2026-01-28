@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing import Any, Mapping, TypeGuard
 
-from toml import load
+from toml import dump, load
 
 from config_repr import MainConfig
-from models import ConfigDict
+from models import ConfigDict, SettingsDict
 
 
 def parse_logs_file(logs_file: str, default_value: str):
@@ -29,12 +29,26 @@ def parse_logs_file(logs_file: str, default_value: str):
 
 
 def validate(value: Mapping[str, Any]) -> TypeGuard[ConfigDict]:
-    v1 = isinstance(value.get("settings"), dict)
-    v2 = isinstance(value.get("vars"), dict)
-    v3 = isinstance(value.get("map"), dict)
-    v4 = isinstance(value.get("exceptions"), dict)
+    settings = value.get("settings")
+    vars = value.get("vars")
+    map = value.get("map")
+    exceptions = value.get("exceptions")
 
-    return v1 and v2 and v3 and v4
+    assert isinstance(settings, dict)
+    assert isinstance(vars, dict)
+    assert isinstance(map, dict)
+    assert isinstance(exceptions, dict)
+
+    for k, v in map.items():
+        assert isinstance(k, str), f"{k} must be of type {str}"
+        assert isinstance(v, str), f"{v} must be of type {str}"
+    for k, v in exceptions.items():
+        assert isinstance(k, str), f"{k} must be of type {str}"
+        assert isinstance(v, list), f"{v} must be of type {list}"
+        for list_val in v:
+            assert isinstance(list_val, str), f"{list_val} must be of type {str}"
+
+    return True
 
 
 def load_config_file(config_file: Path) -> MainConfig:
@@ -61,11 +75,30 @@ def update(this: MainConfig, with_: MainConfig, overwrite: bool) -> None:
 
 
 def save_to_config(config: MainConfig, path: Path) -> None:
-    with path.open("r") as f:
-        toml.dump(config.__dict__, f)
+    with path.open("w") as f:
+        dump(parse_to_str(config), f)
 
 
-def update_config_file(config: MainConfig, config_file: Path, overwrite: bool) -> None:
-    fconfig = load_config_file(config_file)
-    update(fconfig, config, overwrite)
-    save_to_config(fconfig, config_file)
+def parse_to_str(config: MainConfig) -> ConfigDict:
+    settings: SettingsDict = {
+        "laddress": str(config.settings.laddress),
+        "lport": config.settings.lport,
+        "uaddress": str(config.settings.uaddress),
+        "uport": config.settings.uport,
+        "timeout": config.settings.timeout,
+        "log_format": config.settings.log_format,
+        "log_prefix": config.settings.log_prefix,
+        # "logs_file": None,
+    }
+    map = {str(k): str(v) for k, v in config.map.items()}
+    exceptions = {
+        str(k): [str(list_val) for list_val in v] for k, v in config.exceptions.items()
+    }
+    vars = {str(k): str(v) for k, v in config.vars.items()}
+
+    return {
+        "settings": settings,
+        "map": map,
+        "exceptions": exceptions,
+        "vars": vars,
+    }

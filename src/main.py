@@ -1,8 +1,8 @@
 from ipaddress import IPv4Address
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 from dnslib import DNSLabel
-from dnslib.server import DNSHandler, DNSServer
+from dnslib.server import BaseResolver, DNSHandler, DNSLogger, DNSServer
 
 from cli.types_ import Args
 from config_repr import MainConfig, ServerSettings
@@ -17,16 +17,15 @@ from constants import (
     UADDRESS,
     UPORT,
 )
-from dns import MainLogger, MainResolver
-from utils import load_config_file, update, update_config_file
+from utils import load_config_file, save_to_config, update
 
-OVERWRITE_CONFIG_FILE = False  # TODO: add argument to handle this value
+OVERWRITE_CONFIG_FILE = True  # TODO: add argument to handle this value
 
 
 def main() -> None:
     args = Args.parse_args()
 
-    mconfig = MainConfig(
+    config = MainConfig(
         settings=ServerSettings(
             laddress=IPv4Address(LADDRESS),
             lport=LPORT,
@@ -42,40 +41,29 @@ def main() -> None:
         vars={},
     )
 
+    fconfig: Optional[MainConfig] = None
+    try:
+        fconfig = load_config_file(CONFIG_FILE)
+        update(this=config, with_=fconfig, overwrite=True)
+    except FileNotFoundError:
+        pass
+
     if args.force_args:
-        update(mconfig, args.config, True)
-    else:
-        try:
-            update(mconfig, load_config_file(CONFIG_FILE), True)
-        except FileNotFoundError:
-            pass
+        update(this=config, with_=args.config, overwrite=True)
 
     if args.save_config:
-        update_config_file(
-            config=args.config,
-            config_file=CONFIG_FILE,
-            overwrite=OVERWRITE_CONFIG_FILE,
-        )
+        save_to_config(config, CONFIG_FILE)
 
-    settings = mconfig.settings
+    settings = config.settings
 
     lpart = f"Server started at {settings.laddress}:{settings.lport}"
     rpart = f"Upstream server at {settings.uaddress}:{settings.uport}"
     print(f"{lpart} || {rpart}")
 
-    __import__("pprint").pprint(mconfig.__dict__)
-    try:
-        lconfig = load_config_file(CONFIG_FILE)
-        __import__("pprint").pprint(lconfig.__dict__)
-    except Exception:
-        print("Inexistent config file")
-
-    return
-
     start_server(
         settings=settings,
-        map=mconfig.map,
-        exceptions=mconfig.exceptions,
+        map=config.map,
+        exceptions=config.exceptions,
     )
 
 
@@ -84,33 +72,52 @@ def start_server(
     map: Mapping[DNSLabel, IPv4Address],
     exceptions: Mapping[DNSLabel, Sequence[IPv4Address]],
 ) -> None:
-    resolver = MainResolver(
-        address=settings.uaddress,
-        port=settings.uport,
-        timeout=settings.timeout,
-        map=map,
-        exceptions=exceptions,
+    resolver = BaseResolver()
+
+    logger: DNSLogger = DNSLogger(
+        log=settings.log_format,
+        prefix=settings.log_prefix,
+        logf=settings.logs_file,
     )
-
-    logger = MainLogger(settings.log_format, settings.log_prefix)
-
-    if settings.logs_file:
-        logger.set_logs_file(settings.logs_file)
+    handler: type[DNSHandler] = DNSHandler
 
     server = DNSServer(
         resolver=resolver,
         address=str(settings.laddress),
         port=settings.lport,
+        tcp=False,
         logger=logger,
-        handler=DNSHandler,
+        handler=handler,
+        server=None,
     )
+
+    # resolver = MainResolver(
+    #     address=settings.uaddress,
+    #     port=settings.uport,
+    #     timeout=settings.timeout,
+    #     map=map,
+    #     exceptions=exceptions,
+    # )
+    #
+    # logger = MainLogger(settings.log_format, settings.log_prefix)
+    #
+    # if settings.logs_file:
+    #     logger.set_logs_file(settings.logs_file)
+    #
+    # server = DNSServer(
+    #     resolver=resolver,
+    #     address=str(settings.laddress),
+    #     port=settings.lport,
+    #     logger=logger,
+    #     handler=DNSHandler,
+    # )
 
     try:
         server.start()
 
     except KeyboardInterrupt:
         print("Keyboard Interrupt detected. Exitting ...")
-        return
+    return
 
 
 if __name__ == "__main__":

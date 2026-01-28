@@ -8,8 +8,8 @@ class SettingsDict(TypedDict):
     uport: NotRequired[int]
     timeout: NotRequired[int]
     log_format: NotRequired[str]
-    log_prefix: NotRequired[Optional[str]]
-    logs_file: NotRequired[str]
+    log_prefix: NotRequired[bool]
+    logs_file: NotRequired[Optional[str]]
 
 
 type VarsDict = Mapping[str, Any]

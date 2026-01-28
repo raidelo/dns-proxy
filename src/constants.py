@@ -7,7 +7,7 @@ UADDRESS = "1.1.1.1"
 UPORT = 53
 TIMEOUT = 5  # seconds
 LOG_FORMAT = "request,reply,truncated,error"
-LOG_PREFIX = None
+LOG_PREFIX = False
 LOGS_FILE = Path(__file__).with_name("dns_logs.log")
 
 CONFIG_FILE = Path(__file__).with_name("settings.toml")
