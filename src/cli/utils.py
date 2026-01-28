@@ -17,5 +17,14 @@ def parse_map_arg(value: str) -> Mapping[DNSLabel, IPv4Address]:
     return map
 
 
-def parse_exceptions_arg(value: str) -> Mapping[str, Sequence[IPv4Address]]:
-    raise NotImplementedError()  # TODO: todo
+def parse_exceptions_arg(value: str) -> Mapping[DNSLabel, Sequence[IPv4Address]]:
+    mapping: Mapping[DNSLabel, Sequence[IPv4Address]] = {}
+
+    domain, ip = value.split(":", 1)
+    ips = ip.split(",")
+    domain = DNSLabel(domain)
+    ips = [IPv4Address(ip) for ip in ips]
+
+    mapping[domain] = ips
+
+    return mapping

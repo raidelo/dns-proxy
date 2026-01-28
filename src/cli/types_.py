@@ -1,7 +1,9 @@
-from argparse import Namespace
+from argparse import ArgumentError, Namespace
 from dataclasses import dataclass
 from ipaddress import IPv4Address
-from typing import Optional
+from typing import List, Mapping, Optional, Sequence
+
+from dnslib import DNSLabel
 
 from config_repr import MainConfig, ServerSettings
 
@@ -21,6 +23,36 @@ class Args:
     force_args: bool
 
     @classmethod
+    def _map_to_dict(
+        cls,
+        list_: Sequence[Mapping[DNSLabel, IPv4Address]],
+    ) -> Mapping[DNSLabel, IPv4Address]:
+        m: Mapping[DNSLabel, IPv4Address] = {}
+        for dict_ in list_:
+            for k, v in dict_.items():
+                if k in m:
+                    raise ArgumentError(
+                        None,
+                        f"Repeated values for argument -x, --exceptions: {k}:{m[k]} and {k}:{v}",
+                    )
+                m[k] = v
+        return m
+
+    @classmethod
+    def _exceptions_to_dict(
+        cls,
+        list_: Sequence[Mapping[DNSLabel, Sequence[IPv4Address]]],
+    ) -> Mapping[DNSLabel, Sequence[IPv4Address]]:
+        m: Mapping[DNSLabel, List[IPv4Address]] = {}
+        for dict_ in list_:
+            for k, v in dict_.items():
+                if k in m:
+                    m[k].extend(v)
+                else:
+                    m[k] = list(v)
+        return m
+
+    @classmethod
     def from_args(cls, args: Namespace) -> "Args":
         settings = ServerSettings(
             laddress=args.laddress,
@@ -34,8 +66,8 @@ class Args:
         )
         config = MainConfig(
             settings=settings,
-            map=args.map,
-            exceptions=args.exceptions,
+            map=cls._map_to_dict(args.map),
+            exceptions=cls._exceptions_to_dict(args.exceptions),
             vars={},
         )
         return Args(

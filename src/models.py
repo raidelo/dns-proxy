@@ -12,17 +12,17 @@ class SettingsDict(TypedDict):
     logs_file: NotRequired[Optional[str]]
 
 
-type VarsDict = Mapping[str, Any]
-
-
 type MapDict = Mapping[str, str]
 
 
 type ExceptionsDict = Mapping[str, Sequence[str]]
 
 
+type VarsDict = Mapping[str, Any]
+
+
 class ConfigDict(TypedDict):
     settings: NotRequired[SettingsDict]
-    vars: NotRequired[VarsDict]
     map: NotRequired[MapDict]
     exceptions: NotRequired[ExceptionsDict]
+    vars: NotRequired[VarsDict]

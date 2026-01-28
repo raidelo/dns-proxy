@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Mapping, TypeGuard
 
-from toml import dump, load
+from toml import TomlEncoder, dump, load
 
 from config_repr import MainConfig
 from models import ConfigDict, SettingsDict
@@ -74,9 +74,20 @@ def update(this: MainConfig, with_: MainConfig, overwrite: bool) -> None:
     _update(this.vars, with_.vars, overwrite)
 
 
+class CustomTomlEncoder(TomlEncoder):
+    def dump_list(self, v):
+        retval = "["
+        for u in v:
+            retval += str(self.dump_value(u)) + ", "
+
+        retval = retval.strip(", ") + "]"
+
+        return retval
+
+
 def save_to_config(config: MainConfig, path: Path) -> None:
     with path.open("w") as f:
-        dump(parse_to_str(config), f)
+        dump(parse_to_str(config), f, encoder=CustomTomlEncoder())
 
 
 def parse_to_str(config: MainConfig) -> ConfigDict:

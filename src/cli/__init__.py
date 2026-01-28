@@ -81,7 +81,8 @@ def argument_parser() -> ArgumentParser:
     parser.add_argument(
         "-m",
         "--map",
-        default={},
+        action="append",
+        default=[],
         type=parse_map_arg,
         metavar="<domain:ip,domain:ip,...>",
         dest="map",
@@ -91,7 +92,8 @@ def argument_parser() -> ArgumentParser:
     parser.add_argument(
         "-x",
         "--exceptions",
-        default={},
+        action="append",
+        default=[],
         type=parse_exceptions_arg,
         metavar="<domain:ip,domain:ip,...>",
         dest="exceptions",

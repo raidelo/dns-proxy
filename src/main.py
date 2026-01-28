@@ -19,8 +19,6 @@ from constants import (
 )
 from utils import load_config_file, save_to_config, update
 
-OVERWRITE_CONFIG_FILE = True  # TODO: add argument to handle this value
-
 
 def main() -> None:
     args = Args.parse_args()
