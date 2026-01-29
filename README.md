@@ -1,89 +1,91 @@
 # Python DNS Proxy Server
 
-## Modo de uso:
+<!--toc:start-->
+- [Python DNS Proxy Server](#python-dns-proxy-server)
+  - [Modo de uso](#modo-de-uso)
+  - [Parámetros](#parámetros)
+  - [Ejemplo de archivo de configuración](#ejemplo-de-archivo-de-configuración)
+    - [Ejemplo de funcionamiento (tomando en cuenta la configuración anterior)](#ejemplo-de-funcionamiento-tomando-en-cuenta-la-configuración-anterior)
+<!--toc:end-->
 
-El script tomará los argumentos que el usuario le pase por consola si es que no existe un archivo de configuración próximo al script. Si el usuario no introduce algún argumento, se tomará el valor por defecto de ese parámetro. Si el archivo de configuración existe, se tomarán los valores del mismo ignorando así los argumentos pasados por la línea de comandos, a menos que se especifique la flag --use-args, la cual forzará al script a usar los argumentos pasados por consola. El archivo de configuración se puede crear al introducir el parámetro --save-config, el cual guardará en el archivo todos los valores pasados como argumento. Cada parámetro tomará su valor por defecto si es que el usuario no introduce el argumento.
+## Modo de uso
 
-La sección [MAP] del archivo de configuración será utilizada para asignarle una IP a un dominio de forma manual. Cada vez que se pregunte por ese dominio, se responderá con la IP que se le asigne.
+El script tomará los argumentos que el usuario le pase por consola si es que no existe un archivo de configuración en la ruta `$HOME/.config/dns-proxy/settings.toml`. Para cada argumento que el usuario no ingrese, se tomará su valor por defecto. Si el archivo de configuración existe, se tomarán los valores del mismo ignorando así los argumentos pasados por la línea de comandos, a menos que se especifique la flag `--force-args`, la cual forzará al script a usar los argumentos pasados por consola por encima de los del archivo de configuración, pero aún así, los valores del archivo de configuración reemplazarán a los valores por defecto para cada campo. El archivo de configuración se puede crear al introducir el parámetro `--save-config`, en el cual se guardarán todos los valores pasados como argumento.
 
-La sección [EXCEPTIONS] del archivo de configuración será utilizada para verificar si la IP desde donde se hace la petición coincide con la IP a la que está mapeado el dominio por el que se pregunta. Si es así, se forzará al servidor DNS proxy local a hacerle una petición al servidor DNS remoto por ese dominio, incluso si ese dominio está manualmente mapeado una dirección IP en la sección [MAP]. Si otro IP pregunta por ese dominio, se le responderá de acuerdo al contenido de la sección [MAP].
+La sección `map` del archivo de configuración será utilizada para asignarle una IP a un dominio de forma manual. Cada vez que se pregunte por ese dominio, se responderá con la IP que se le asigne.
 
-Para ambas secciones: Si en el lugar del dominio, aparece una palabra, por ejemplo, ip, precedido por el carácter $, no se tomará en cuenta ese dominio. Esto es, por ejemplo, para poder crear una variable y asignarla a un dominio de la siguiente forma: dominio = %($ip)s. Esta variable será local en cada sección, es decir, la variable $ip en la sección [MAP] no existirá en la sección [EXCEPTIONS]. Para que una variable sea accesible desde todas las secciones, debe definirse en la sección [DEFAULT].
+La sección `exceptions` del archivo de configuración será utilizada para verificar si la IP desde donde se hace la petición coincide con alguna de las IPs a las que está mapeado el dominio por el que se pregunta. Si es así, se forzará al servidor DNS proxy local a hacerle una petición al servidor DNS remoto por ese dominio, incluso si ese dominio está manualmente mapeado una dirección IP en la sección `map`. Si otro IP pregunta por ese dominio, se le responderá de acuerdo al contenido de la sección `map`.
 
-## Parámetros:
+La sección `vars` será utilizada para declarar lo que serán variables. Por ejemplo, si se introduce `ip = "8.8.8.8"`, se podrá acceder a esa IP desde cualquiera de las secciones `map` o `exceptions` simplemente referenciando a esa variable con el formato `${VARIABLE}`, en este caso, `${ip}`. Si en la sección `map` hay una asignación de la siguiente forma: `"domain.com" = "${ip}"`, al dominio `domain.com` le será asignado como IP el valor de la variable `ip`.
+
+## Parámetros
 
 - port : Puerto local por el cual el servidor estará a la escucha. Por defecto 53.
 
-- -a, --address \<address> : Interfaz por la cual actuará el servidor. Por defecto todas las interfaces.
+- -b, --bind \<address> : Interfaz por la cual actuará el servidor. Por defecto todas las interfaces (0.0.0.0).
 
-- -u, --upstream \<address>:\<port> : Servidor DNS de destino. Por defecto 1.1.1.1 por el puerto 53.
+- -u, --upstream \<address>:\<port> : Servidor DNS de destino. Por defecto 1.1.1.1 por el puerto 53 (1.1.1.1:53).
 
 - -t, --timeout : Tiempo máximo a esperar por la respuesta del servidor de destino. Por defecto 5 segundos. Si pasa ese tiempo, el servidor proxy enviará la respuesta NXDOMAIN (Non-Existent Domain).
 
-- --log-format \<log_format> : Formato de salida en consola de las peticiones y respuestas hechas por el servidor.
+- --log-format \<log_format> : Formato de salida de los logs.
 
 - --log-prefix : Si incluir en los logs la hora del evento y otros metadatos.
 
-- --save-config [config_file_path] : Archivo en el cual guardar los valores de los argumentos pasados al script (excepto --save-config y --use-args). Se comportará de la siguiente manera:
+- --save-config \[path] : Archivo en el cual guardar los valores de los argumentos pasados al script (excepto --save-config y --force-args). Se comportará de la siguiente manera:
   1. No se especifica la flag ni su argumento: No se guardará la configuración en un archivo.
-  2. Se especifica la flag pero no su argumento: Se guardará la configuración en un archivo con nombre por defecto `dns_proxy_settings.ini`.
+  2. Se especifica la flag pero no su argumento: Se guardará la configuración en un archivo en la ruta por defecto `$HOME/.config/dns-proxy/settings.toml`.
   3. Se especifica la flag con su argumento: Se usará ese nombre de archivo como el nombre del archivo de configuración.
 
-- --use-args : Actúa como flag. Si se especifica, se usarán los argumentos introducidos por consola y se ignorarán los valores contenidos en el archivo de configuración. Por defecto se utiliza el archivo de configuración al leer los valores.
+- --force-args : Actúa como flag. Si se especifica, se usarán los argumentos introducidos por consola y se ignorarán los valores contenidos en el archivo de configuración. Por defecto se utiliza el archivo de configuración al leer los valores.
 
 TODO: change format of specified values for --map and --exceptions
 
-- -m, --map \<dominio:ip> : Si se especifica, debe pasarse como argumento almenos un par \<dominio:ip>. Si se pasarán mas de un par, deben ir separados o por comas, o por espacios.
+- -m, --map \<dominio:ip> : Si se especifica, debe pasarse como argumento almenos un par \<dominio:ip>. Si se pasarán mas de un par, deben ir separados o por comas, o introducir varios argumentos -m.
 
-- -x, --exceptions \<dominio:ip> : El paso de argumentos es igual al del parámetro --map.
+- -x, --exceptions \<dominio:ip> : Si se especifica, debe pasarse como argumento almenos un par \<dominio:ip>. Si se pasarán mas de un par, se deben introducir varios argumentos -x.
 
-- --logs-file \<logs_file> : Archivo en el cual guardar los registros de peticiones y respuestas que maneje el proxy. Se comportará de la siguiente manera:
-  1. No se especifica la flag ni su argumento: Se guardarán los logs en un archivo con nombre por defecto `dns_logs.log`.
-  2. Se especifica la flag con su argumento:
-     - El argumento está dentro de los valores `[true, 1, activate, enable, on]`: Se guardarán los logs en un archivo con nombre por defecto `dns_logs.log`.
-     - El argumento está dentro de los valores `[false, 0, deactivate, disable, off]`: No se guardarán los logs en un archivo.
-     - El argumento no está dentro de los valores anteriores: Se usará ese nombre de archivo como el nombre del archivo de logs.
+- --logs-file \<path> : Archivo en el cual guardar los logs del servidor. Si no se especifica, el archivo por defecto se encontrará en `$HOME/.config/dns-proxy/dns.log`.
 
-### Ejemplo de archivo de configuración .ini
+## Ejemplo de archivo de configuración
 
-```ini
-[DEFAULT]
-address = 0.0.0.0
-port = 53
-upstream = 1.1.1.1:53
+```toml
+[settings]
+laddress = "192.168.1.2"
+lport = 53
+uaddress = "8.8.4.4"
+uport = 53
 timeout = 5
-log_format = request,reply,truncated,error
-log_prefix = False
-logs_file = name_of_logs_file.log
+log_format = "request,reply,truncated,error"
+log_prefix = true
+logs_file = "path/to/logs/file.log"
 
-[SAVED]
-address = 192.168.1.2
-upstream = 8.8.8.8:53
+[vars]
+ip = "192.168.1.10"
 
-[MAP]
-$ip = 192.168.1.10
-personal.domain1 = %($ip)s
-personal.domain2 = 192.168.42.86
-www.personal.domain3 = 192.168.1.1
+[map]
+"personal.domain1" = "${ip}"
+"personal.domain2" = "192.168.42.86"
+"www.personal.domain3" = "192.168.1.1"
 
-[EXCEPTIONS]
-www.personal.domain3 = 192.168.42.86
+[exceptions]
+"www.personal.domain3" = "192.168.42.86"
 ```
 
-## Ejemplo de funcionamiento (tomando en cuenta la configuración anterior):
+### Ejemplo de funcionamiento (tomando en cuenta la configuración anterior)
 
 ```
 IP <192.168.1.10> pregunta por el dominio <personal.domain1>
 DNSProxy responde a <192.168.1.10>: <personal.domain1> está en <192.168.1.10>
 
 IP <192.168.1.12> pregunta por el dominio <personal.domain5>
-DNSProxy pregunta a servidor remoto <8.8.8.8> por el dominio <personal.domain5>
-DNSProxy responde a <192.168.1.12> con la respuesta del servidor remoto <8.8.8.8>
+DNSProxy pregunta a servidor remoto <8.8.4.4> por el dominio <personal.domain5>
+DNSProxy responde a <192.168.1.12> con la respuesta del servidor remoto <8.8.4.4>
 
 IP <192.168.42.85> pregunta por el dominio <www.personal.domain3>
 DNSProxy responde a <192.168.42.85>: <www.personal.domain3> está en <192.168.1.1>
 
 IP <192.168.42.86> pregunta por el dominio <www.personal.domain3>
-DNSProxy pregunta a servidor remoto <8.8.8.8> por el dominio <www.personal.domain3>
-DNSProxy responde a <192.168.42.86> con la respuesta del servidor remoto <8.8.8.8>
+DNSProxy pregunta a servidor remoto <8.8.4.4> por el dominio <www.personal.domain3>
+DNSProxy responde a <192.168.42.86> con la respuesta del servidor remoto <8.8.4.4>
 ```
