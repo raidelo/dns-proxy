@@ -1,6 +1,7 @@
 # Python DNS Proxy Server
 
 ## Modo de uso:
+
 El script tomará los argumentos que el usuario le pase por consola si es que no existe un archivo de configuración próximo al script. Si el usuario no introduce algún argumento, se tomará el valor por defecto de ese parámetro. Si el archivo de configuración existe, se tomarán los valores del mismo ignorando así los argumentos pasados por la línea de comandos, a menos que se especifique la flag --use-args, la cual forzará al script a usar los argumentos pasados por consola. El archivo de configuración se puede crear al introducir el parámetro --save-config, el cual guardará en el archivo todos los valores pasados como argumento. Cada parámetro tomará su valor por defecto si es que el usuario no introduce el argumento.
 
 La sección [MAP] del archivo de configuración será utilizada para asignarle una IP a un dominio de forma manual. Cada vez que se pregunte por ese dominio, se responderá con la IP que se le asigne.
@@ -24,24 +25,27 @@ Para ambas secciones: Si en el lugar del dominio, aparece una palabra, por ejemp
 - --log-prefix : Si incluir en los logs la hora del evento y otros metadatos.
 
 - --save-config [config_file_path] : Archivo en el cual guardar los valores de los argumentos pasados al script (excepto --save-config y --use-args). Se comportará de la siguiente manera:
-    1. No se especifica la flag ni su argumento: No se guardará la configuración en un archivo.
-    2. Se especifica la flag pero no su argumento: Se guardará la configuración en un archivo con nombre por defecto `dns_proxy_settings.ini`.
-    3. Se especifica la flag con su argumento: Se usará ese nombre de archivo como el nombre del archivo de configuración.
+  1. No se especifica la flag ni su argumento: No se guardará la configuración en un archivo.
+  2. Se especifica la flag pero no su argumento: Se guardará la configuración en un archivo con nombre por defecto `dns_proxy_settings.ini`.
+  3. Se especifica la flag con su argumento: Se usará ese nombre de archivo como el nombre del archivo de configuración.
 
 - --use-args : Actúa como flag. Si se especifica, se usarán los argumentos introducidos por consola y se ignorarán los valores contenidos en el archivo de configuración. Por defecto se utiliza el archivo de configuración al leer los valores.
+
+TODO: change format of specified values for --map and --exceptions
 
 - -m, --map \<dominio:ip> : Si se especifica, debe pasarse como argumento almenos un par \<dominio:ip>. Si se pasarán mas de un par, deben ir separados o por comas, o por espacios.
 
 - -x, --exceptions \<dominio:ip> : El paso de argumentos es igual al del parámetro --map.
 
 - --logs-file \<logs_file> : Archivo en el cual guardar los registros de peticiones y respuestas que maneje el proxy. Se comportará de la siguiente manera:
-    1. No se especifica la flag ni su argumento: Se guardarán los logs en un archivo con nombre por defecto `dns_logs.log`.
-    2. Se especifica la flag con su argumento:
-        - El argumento está dentro de los valores `[true, 1, activate, enable, on]`: Se guardarán los logs en un archivo con nombre por defecto `dns_logs.log`.
-        - El argumento está dentro de los valores `[false, 0, deactivate, disable, off]`: No se guardarán los logs en un archivo.
-        - El argumento no está dentro de los valores anteriores: Se usará ese nombre de archivo como el nombre del archivo de logs.
+  1. No se especifica la flag ni su argumento: Se guardarán los logs en un archivo con nombre por defecto `dns_logs.log`.
+  2. Se especifica la flag con su argumento:
+     - El argumento está dentro de los valores `[true, 1, activate, enable, on]`: Se guardarán los logs en un archivo con nombre por defecto `dns_logs.log`.
+     - El argumento está dentro de los valores `[false, 0, deactivate, disable, off]`: No se guardarán los logs en un archivo.
+     - El argumento no está dentro de los valores anteriores: Se usará ese nombre de archivo como el nombre del archivo de logs.
 
 ### Ejemplo de archivo de configuración .ini
+
 ```ini
 [DEFAULT]
 address = 0.0.0.0
@@ -67,6 +71,7 @@ www.personal.domain3 = 192.168.42.86
 ```
 
 ## Ejemplo de funcionamiento (tomando en cuenta la configuración anterior):
+
 ```
 IP <192.168.1.10> pregunta por el dominio <personal.domain1>
 DNSProxy responde a <192.168.1.10>: <personal.domain1> está en <192.168.1.10>
