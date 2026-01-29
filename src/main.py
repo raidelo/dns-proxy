@@ -53,7 +53,7 @@ def main() -> None:
     except FileNotFoundError:
         pass
 
-    if args.force_args:
+    if args.force_args or fconfig is None:
         update(this=config, with_=args.config, overwrite=True)
 
     if args.save_config:
