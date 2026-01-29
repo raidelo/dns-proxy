@@ -91,6 +91,7 @@ class CustomTomlEncoder(TomlEncoder):
 
 
 def save_to_config(config: MainConfig, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w") as f:
         nconfig = parse_to_str(config)
         dump(nconfig, f, encoder=CustomTomlEncoder())
