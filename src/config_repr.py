@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from ipaddress import AddressValueError, IPv4Address
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Optional
 
 from dnslib import DNSLabel
 
@@ -47,9 +47,9 @@ class ServerSettings:
 @dataclass
 class MainConfig:
     settings: ServerSettings
-    map: Mapping[DNSLabel, IPv4Address]
-    exceptions: Mapping[DNSLabel, Sequence[IPv4Address]]
-    vars: Mapping[str, Any]
+    map: dict[DNSLabel, IPv4Address]
+    exceptions: dict[DNSLabel, list[IPv4Address]]
+    vars: dict[str, Any]
 
     @classmethod
     def from_dict(cls, val: ConfigDict) -> "MainConfig":
@@ -68,8 +68,8 @@ class MainConfig:
 def parse_map_sect(
     map: MapDict,
     vars: Optional[VarsDict],
-) -> Mapping[DNSLabel, IPv4Address]:
-    new_map: Mapping[DNSLabel, IPv4Address] = {}
+) -> dict[DNSLabel, IPv4Address]:
+    new_map: dict[DNSLabel, IPv4Address] = {}
     for domain, ip_str in map.items():
         new_key = DNSLabel(domain)
         try:
@@ -88,8 +88,8 @@ def parse_map_sect(
 def parse_exceptions_sect(
     exceptions: ExceptionsDict,
     vars: Optional[VarsDict],
-) -> Mapping[DNSLabel, Sequence[IPv4Address]]:
-    new_exc: Mapping[DNSLabel, Sequence[IPv4Address]] = {}
+) -> dict[DNSLabel, list[IPv4Address]]:
+    new_exc: dict[DNSLabel, list[IPv4Address]] = {}
     for domain, ip_seq in exceptions.items():
         new_key = DNSLabel(domain)
         new_ip_seq: list[IPv4Address] = []

@@ -2,7 +2,7 @@ from ipaddress import IPv4Address
 from typing import Mapping, Optional, Sequence
 
 from dnslib import DNSLabel
-from dnslib.server import BaseResolver, DNSHandler, DNSLogger, DNSServer
+from dnslib.server import DNSHandler, DNSLogger, DNSServer
 
 from cli.types_ import Args
 from config_repr import MainConfig, ServerSettings
@@ -17,7 +17,14 @@ from constants import (
     UADDRESS,
     UPORT,
 )
-from utils import load_config_file, save_to_config, update
+from dns import CustomDNSLogger, CustomProxyResolver
+from utils import (
+    load_config_file,
+    logf,
+    print_error,
+    save_to_config,
+    update,
+)
 
 
 def main() -> None:
@@ -70,53 +77,45 @@ def start_server(
     map: Mapping[DNSLabel, IPv4Address],
     exceptions: Mapping[DNSLabel, Sequence[IPv4Address]],
 ) -> None:
-    resolver = BaseResolver()
+    resolver = CustomProxyResolver(
+        address=str(settings.uaddress),
+        port=settings.uport,
+        timeout=settings.timeout,
+        strip_aaaa=False,
+        map=map,
+        exceptions=exceptions,
+    )
 
-    logger: DNSLogger = DNSLogger(
+    def _logf(msg: str) -> None:
+        return logf(msg, LOGS_FILE)
+
+    logger: DNSLogger = CustomDNSLogger(
         log=settings.log_format,
         prefix=settings.log_prefix,
-        logf=settings.logs_file,
+        logf=_logf,
     )
+
     handler: type[DNSHandler] = DNSHandler
 
-    server = DNSServer(
-        resolver=resolver,
-        address=str(settings.laddress),
-        port=settings.lport,
-        tcp=False,
-        logger=logger,
-        handler=handler,
-        server=None,
-    )
-
-    # resolver = MainResolver(
-    #     address=settings.uaddress,
-    #     port=settings.uport,
-    #     timeout=settings.timeout,
-    #     map=map,
-    #     exceptions=exceptions,
-    # )
-    #
-    # logger = MainLogger(settings.log_format, settings.log_prefix)
-    #
-    # if settings.logs_file:
-    #     logger.set_logs_file(settings.logs_file)
-    #
-    # server = DNSServer(
-    #     resolver=resolver,
-    #     address=str(settings.laddress),
-    #     port=settings.lport,
-    #     logger=logger,
-    #     handler=DNSHandler,
-    # )
-
     try:
-        server.start()
+        server = DNSServer(
+            resolver=resolver,
+            address=str(settings.laddress),
+            port=settings.lport,
+            tcp=False,
+            logger=logger,
+            handler=handler,
+            server=None,
+        )
+    except PermissionError:
+        print_error(f"cannot bind to port {settings.lport}")
+        return
 
-    except KeyboardInterrupt:
-        print("Keyboard Interrupt detected. Exitting ...")
-    return
+    server.start()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Interrupt detected ...")

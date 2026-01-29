@@ -4,13 +4,13 @@ from ipaddress import IPv4Address
 from cli.types_ import UpstreamServer
 from cli.utils import parse_exceptions_arg, parse_map_arg
 from constants import (
+    CONFIG_FILE,
+    LADDRESS,
     LOG_FORMAT,
     LOG_PREFIX,
     LOGS_FILE,
-    CONFIG_FILE,
-    TIMEOUT,
-    LADDRESS,
     LPORT,
+    TIMEOUT,
     UADDRESS,
     UPORT,
 )

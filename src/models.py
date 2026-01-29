@@ -1,4 +1,4 @@
-from typing import Any, Mapping, NotRequired, Optional, Sequence, TypedDict
+from typing import Any, NotRequired, Optional, TypedDict
 
 
 class SettingsDict(TypedDict):
@@ -12,13 +12,13 @@ class SettingsDict(TypedDict):
     logs_file: NotRequired[Optional[str]]
 
 
-type MapDict = Mapping[str, str]
+type MapDict = dict[str, str]
 
 
-type ExceptionsDict = Mapping[str, Sequence[str]]
+type ExceptionsDict = dict[str, list[str]]
 
 
-type VarsDict = Mapping[str, Any]
+type VarsDict = dict[str, Any]
 
 
 class ConfigDict(TypedDict):

@@ -1,120 +1,59 @@
-from pathlib import Path
+from ipaddress import IPv4Address
 from time import strftime
+from typing import Callable, Mapping, Optional, Sequence
 
-from dnslib import QTYPE, RCODE, RR
+from dnslib import RR, DNSLabel, DNSRecord
 from dnslib.proxy import ProxyResolver
-from dnslib.server import DNSLogger
+from dnslib.server import DNSHandler, DNSLogger
 
 
-class MainResolver(ProxyResolver):
+class CustomProxyResolver(ProxyResolver):
     def __init__(
         self,
-        address,
-        port,
-        timeout=0,
-        strip_aaaa=False,
-        map={},
-        exceptions={},
+        address: str,
+        port: int,
+        timeout: int = 0,
+        strip_aaaa: bool = False,
+        map: Mapping[DNSLabel, IPv4Address] = {},
+        exceptions: Mapping[DNSLabel, Sequence[IPv4Address]] = {},
     ):
         self.map = map
         self.exceptions = exceptions
         super().__init__(address, port, timeout, strip_aaaa)
 
-    def resolve(self, request, handler):
-        domain = domain = self.get_domain(request.q.qname)
+    def resolve(self, request: DNSRecord, handler: DNSHandler):
+        qname: DNSLabel = request.q.qname
+        client_address: str = handler.client_address[0]
 
-        if domain in self.map.keys() and not (
-            domain in self.exceptions.keys()
-            and self.exceptions[domain] == handler.client_address[0]
+        if (
+            qname in self.exceptions
+            and client_address in self.exceptions[qname]
+            or qname not in self.map
         ):
+            return super().resolve(request, handler)
+
+        else:
             reply = request.reply()
 
-            ip = self.map[domain]
+            ip = self.map[qname]
 
-            reply.add_answer(
-                *RR.fromZone("{domain} A {ip}".format(domain=domain, ip=ip))
-            )
+            reply.add_answer(*RR.fromZone(f"{qname} A {ip}"))
 
             return reply
 
-        return super().resolve(request, handler)
 
-    def get_domain(self, qname):
-        return b".".join(qname.label).decode("utf-8")
-
-
-class MainLogger(DNSLogger):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, *kwargs)
-        self.logs_file = None
+class CustomDNSLogger(DNSLogger):
+    def __init__(
+        self,
+        log: str = "",
+        prefix: bool = True,
+        logf: Optional[Callable[[str], None]] = None,
+    ):
+        super().__init__(log, prefix, logf)
 
     def log_prefix(self, handler):
+        _ = handler
         if self.prefix:
-            return "%s " % (strftime("%Y-%m-%d %X"))
+            return f"{strftime('%F %T')} "
         else:
             return ""
-
-    def log_request(self, handler, request):
-        self.logf(
-            '%sRequest: [%s:%d] (%s) / "%s" (%s)'
-            % (
-                self.log_prefix(handler),
-                handler.client_address[0],
-                handler.client_address[1],
-                handler.protocol,
-                request.q.qname,
-                QTYPE[request.q.qtype],
-            )
-        )
-
-        self.log_data(request)
-
-    def log_reply(self, handler, reply):
-        if reply.header.rcode == RCODE.NOERROR:
-            self.logf(
-                '%sReply:   [%s:%d] (%s) / "%s" (%s) / RRs: %s'
-                % (
-                    self.log_prefix(handler),
-                    handler.client_address[0],
-                    handler.client_address[1],
-                    handler.protocol,
-                    reply.q.qname,
-                    QTYPE[reply.q.qtype],
-                    ",".join([QTYPE[a.rtype] for a in reply.rr]),
-                )
-            )
-
-        else:
-            self.logf(
-                '%sReply:   [%s:%d] (%s) / "%s" (%s) / %s'
-                % (
-                    self.log_prefix(handler),
-                    handler.client_address[0],
-                    handler.client_address[1],
-                    handler.protocol,
-                    reply.q.qname,
-                    QTYPE[reply.q.qtype],
-                    RCODE[reply.header.rcode],
-                )
-            )
-
-        self.log_data(reply)
-
-    def log_dumper(self, data):
-        print(data)
-
-        if self.logs_file:
-            self.logs_file.write(data.encode() + b"\n")
-            self.logs_file.flush()
-
-    def set_logs_file(self, logs_file: Path):
-        try:
-            self.logs_file = open(logs_file, "wb")
-            self.logf = self.log_dumper
-
-        except Exception:
-            print("error: failed to open the log file")
-
-    def __del__(self):
-        if self.logs_file:
-            self.logs_file.close()

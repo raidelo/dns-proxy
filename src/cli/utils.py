@@ -1,11 +1,10 @@
 from ipaddress import IPv4Address
-from typing import Mapping, Sequence
 
 from dnslib import DNSLabel
 
 
-def parse_map_arg(value: str) -> Mapping[DNSLabel, IPv4Address]:
-    map: Mapping[DNSLabel, IPv4Address] = {}
+def parse_map_arg(value: str) -> dict[DNSLabel, IPv4Address]:
+    map: dict[DNSLabel, IPv4Address] = {}
 
     for pair in value.split(","):
         domain, ip = pair.split(":", 1)
@@ -17,8 +16,8 @@ def parse_map_arg(value: str) -> Mapping[DNSLabel, IPv4Address]:
     return map
 
 
-def parse_exceptions_arg(value: str) -> Mapping[DNSLabel, Sequence[IPv4Address]]:
-    mapping: Mapping[DNSLabel, Sequence[IPv4Address]] = {}
+def parse_exceptions_arg(value: str) -> dict[DNSLabel, list[IPv4Address]]:
+    mapping: dict[DNSLabel, list[IPv4Address]] = {}
 
     domain, ip = value.split(":", 1)
     ips = ip.split(",")

@@ -1,7 +1,7 @@
 from argparse import ArgumentError, Namespace
 from dataclasses import dataclass
 from ipaddress import IPv4Address
-from typing import List, Mapping, Optional, Sequence
+from typing import Optional
 
 from dnslib import DNSLabel
 
@@ -25,9 +25,9 @@ class Args:
     @classmethod
     def _map_to_dict(
         cls,
-        list_: Sequence[Mapping[DNSLabel, IPv4Address]],
-    ) -> Mapping[DNSLabel, IPv4Address]:
-        m: Mapping[DNSLabel, IPv4Address] = {}
+        list_: list[dict[DNSLabel, IPv4Address]],
+    ) -> dict[DNSLabel, IPv4Address]:
+        m: dict[DNSLabel, IPv4Address] = {}
         for dict_ in list_:
             for k, v in dict_.items():
                 if k in m:
@@ -41,9 +41,9 @@ class Args:
     @classmethod
     def _exceptions_to_dict(
         cls,
-        list_: Sequence[Mapping[DNSLabel, Sequence[IPv4Address]]],
-    ) -> Mapping[DNSLabel, Sequence[IPv4Address]]:
-        m: Mapping[DNSLabel, List[IPv4Address]] = {}
+        list_: list[dict[DNSLabel, list[IPv4Address]]],
+    ) -> dict[DNSLabel, list[IPv4Address]]:
+        m: dict[DNSLabel, list[IPv4Address]] = {}
         for dict_ in list_:
             for k, v in dict_.items():
                 if k in m:
