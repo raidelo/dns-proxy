@@ -106,7 +106,7 @@ def parse_to_str(config: MainConfig) -> ConfigDict:
         "timeout": config.settings.timeout,
         "log_format": config.settings.log_format,
         "log_prefix": config.settings.log_prefix,
-        # "logs_file": None,
+        "logs_file": config.settings.logs_file.as_posix(),
     }
     map = {str(k): str(v) for k, v in config.map.items()}
     exceptions = {str(k): [str(lv) for lv in v] for k, v in config.exceptions.items()}
