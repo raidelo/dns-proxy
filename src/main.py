@@ -118,4 +118,4 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("Interrupt detected ...")
+        print("\nInterrupt detected ...")
